@@ -1,0 +1,36 @@
+namespace Mini_Project___Order_Processing_System;
+
+public static class Program
+{
+    public static async Task Main(string[] args)
+    {
+        // i didnt know how when i press ctrl+c the run stops so i used AI here
+        using var cts = new CancellationTokenSource();
+
+        // Ctrl+C cancels the run instead of killing the program
+        Console.CancelKeyPress += (sender, e) =>
+        {
+            e.Cancel = true;
+            cts.Cancel();
+        };
+
+        // --cancel-after <ms>
+        int index = Array.IndexOf(args, "--cancel-after");
+        if (index >= 0 && index + 1 < args.Length && int.TryParse(args[index + 1], out int ms))
+        {
+            cts.CancelAfter(ms);
+        }
+
+        string phase = "phase1";
+        if (args.Length > 0 && !args[0].StartsWith("--")) phase = args[0];
+
+        if (phase == "phase1")
+        {
+            await new Phase1Runner().RunAsync(cts.Token);
+        }
+        else
+        {
+            Console.WriteLine("Unknown phase: " + phase);
+        }
+    }
+}
