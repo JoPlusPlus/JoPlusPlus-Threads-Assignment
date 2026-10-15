@@ -1,18 +1,50 @@
-# 1. Why are the sync and async times almost the same when orders are awaited one after another?
+# Phase 1 Questions
+## 1. Why are the sync and async times almost the same when orders are awaited one after another?
 Each await finishes before the next order starts so the work is still one order at a time. Async only frees the thread while waiting so it doesnt loop faster
 
-# 2. Is the thread ID before an await always the same as after it? Why? Use your own log lines as evidence.
+## 2. Is the thread ID before an await always the same as after it? Why? Use your own log lines as evidence.
 no they are not, because the ThreadPool may send another thread to continue the work not always the same thread
 `[17:33:09.276] [Thread 12] OrderValidator -> Validating order #8` 
 `[17:33:12.330] [Thread 13] OrderRepository -> Order #8 saved (Validated)` 
 the validation started at thread 12 and ended by thread 13
 
-# 3. What does the thread do while Task.Delay() is waiting? And while Thread.Sleep() is waiting?
+## 3. What does the thread do while Task.Delay() is waiting? And while Thread.Sleep() is waiting?
 while `Task.delay()` it returns to ThreadPool and execute another work, while `Thread.Sleep()` blocks the thread 
 
-# 4. Why should a repository method return Task<T> instead of T?
+## 4. Why should a repository method return Task<T> instead of T?
 we return Task so that we can use await on it
 
-# 5. What is the difference between File.ReadAllText and File.ReadAllTextAsync? Does the async version occupy a thread while the disk is reading?
+## 5. What is the difference between File.ReadAllText and File.ReadAllTextAsync? Does the async version occupy a thread while the disk is reading?
 `File.ReadAllText` -> thread is blocked while reading
 `File.ReadAllTextAsync` -> thread is free to do another work until reading finish
+
+# Phase 2 Questions
+## 1. What is the difference between starting a task and awaiting it?
+starting two tasks happen at same time while awaiting wait foreach task to finish then start the next one
+
+## 2. Does every Task create a new thread? Does Task.Delay() use a thread while waiting?
+- No Threads are controlled by `ThreadPool`.
+- No the thread return to `ThreadPool`
+
+## 3. What happens if you call .Result or .Wait() on an unfinished task instead of await? Why is it dangerous? Write a small separate demo method - the only place .Result / .Wait() is allowed.
+
+- Calling `.Result()` or `.Wait()` will block the thread until the result come while using await free the thread until the Task finish
+- They are dangerous because of blocking
+- Wrote it in `(Runners/BlockingDemo.cs)`
+
+## 4.What happens to an exception thrown inside a task that is never awaited?
+- usually wont crash the app
+
+## 5. When should you use Task.Run(), and when should you avoid it?
+- Use `Task.Run` when we want a new Thread doing this work
+- avoid it in I/O operation since we dont want Thread at all , just use await
+
+## 6. What is the difference between Task and Task<T>?
+- `Task` doesnt return anything but enable the `await` keyword , while `Task<T>` returns T
+
+## 7. Why can a lock block not contain an await?
+- because await free the thread to do another work and may return another thread to continue , and in `lock` we want only the thread entered and locked the lock, he only should release it
+
+## 8. Why did the unprotected stock reservation oversell, and how did you prevent it?
+- it oversells because both reads the same data at same time
+- i prevented it by using `_store.UpdateAsync` which lock the file until it reads,update . now when the other thread come to read , it will read an updated data

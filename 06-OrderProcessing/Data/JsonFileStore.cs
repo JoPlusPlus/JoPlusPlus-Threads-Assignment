@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Mini_Project___Order_Processing_System.MyExceptions;
 
 namespace Mini_Project___Order_Processing_System.Data;
 
@@ -137,7 +138,7 @@ public class JsonFileStore
         }
         catch (JsonException ex)
         {
-            throw new DataFileCorruptedException(fileName, ex);
+            throw new DataFileCorruptedException(fileName);
         }
     }
 
