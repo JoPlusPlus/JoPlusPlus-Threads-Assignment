@@ -1,8 +1,20 @@
+using System.Collections.Concurrent;
+
 namespace Mini_Project___Order_Processing_System.Data;
 
 public static class Log
 {
     private static readonly object _sync = new();
+
+    // every thread id that wrote a log line (used by the sync vs async comparison)
+    private static readonly ConcurrentDictionary<int, byte> _threads = new();
+
+    public static int DistinctThreads => _threads.Count;
+
+    public static void ResetThreads()
+    {
+        _threads.Clear();
+    }
 
     public static void Info(string component, string message)
     {
@@ -21,6 +33,8 @@ public static class Log
 
     private static void Write(ConsoleColor? color, string component, string message)
     {
+        _threads[Environment.CurrentManagedThreadId] = 0;
+
         string line = $"[{DateTime.Now:HH:mm:ss.fff}] [Thread {Environment.CurrentManagedThreadId}] {component} -> {message}";
 
         lock (_sync)

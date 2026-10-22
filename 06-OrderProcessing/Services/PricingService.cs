@@ -52,7 +52,9 @@ public class PricingService
         if (order.CouponCode != null)
         {
             var coupon = await coupons.GetByCodeAsync(order.CouponCode, ct);
-            if (coupon != null) percent += coupon.DiscountPercent;
+            if (coupon == null) throw new InvalidCouponException($"Coupon '{order.CouponCode}' does not exist");
+            if (coupon.ExpiryDate < DateTime.Today) throw new InvalidCouponException($"Coupon '{order.CouponCode}' has expired");
+            percent += coupon.DiscountPercent;
         }
 
         if (percent > 30) percent = 30;
@@ -94,5 +96,38 @@ public class PricingService
         shipping = Math.Round(shipping, 2, MidpointRounding.AwayFromZero);
         Log.Success("PricingService", $"Order #{order.Id} Shipping = {shipping}");
         return shipping;
+    }
+
+    // Phase 3: 1 query, then the 2 APIs at the same time. Fills all the money fields.
+    public async Task<decimal> CalculateTotalAsync(Order order, CancellationToken ct)
+    {
+        order.SubTotal = await CalculateSubTotalAsync(order, ct);
+
+        // start both API calls
+        Task<decimal> discountTask = GetDiscountAsync(order, ct);
+        Task<decimal> shippingTask = CalculateShippingCostAsync(order, ct);
+
+        // await both, even if the first one fails, so no call is left running alone
+        Exception? error = null;
+        try
+        {
+            order.Discount = await discountTask;
+        }
+        catch (Exception ex)
+        {
+            error = ex;
+        }
+        try
+        {
+            order.ShippingCost = await shippingTask;
+        }
+        catch (Exception ex)
+        {
+            if (error == null) error = ex;
+        }
+        if (error != null) throw error;
+
+        order.TotalAmount = Math.Round(order.SubTotal - order.Discount + order.ShippingCost, 2, MidpointRounding.AwayFromZero);
+        return order.TotalAmount;
     }
 }

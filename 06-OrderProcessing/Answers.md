@@ -48,3 +48,49 @@ starting two tasks happen at same time while awaiting wait foreach task to finis
 ## 8. Why did the unprotected stock reservation oversell, and how did you prevent it?
 - it oversells because both reads the same data at same time
 - i prevented it by using `_store.UpdateAsync` which lock the file until it reads,update . now when the other thread come to read , it will read an updated data
+
+# Phase 3 Questions
+## Seciton 9.6
+1.  Does async make one order's workflow faster? 
+No
+
+2. Why does async scale better for many orders?
+because we will avoid making threads by orders numbers , and reuse the threads while performing I/O
+
+3. What happens to the sync version with 1,000 orders?
+it will need nearly 1000 threads 
+
+4. Why is async essential for apps that call databases, files and APIs?
+reuse the same thread while performing I/O
+
+## Seciton 9.7
+1. What is the problem in this code?
+we didn't use await for `SendConfirmationAsync`, 
+
+2. Show what happens if the email is still being sent when the method returns, or when the console app exits.
+the app might exit before the email is sent and in that case it lost forever
+
+3. Show what happens if the email operation throws an exception.
+won't reach to the caller
+
+4. 
+Before: the method returned with 0 records in `emails.json` and the exception was lost.
+After:
+```
+Order processing finished
+emails.json right after the method returned: 1 record(s)
+```
+and when the email fails:
+```
+FireAndForgetDemo -> The caller can see the email error: SMTP server unavailable (attempt 2)
+Order processing finished
+```
+
+5. When is await necessary?
+when i do I/O alot and need to reuse the threads 
+
+6. When is fire-and-forget acceptable (if ever)?
+if the work done is optional and it's ok to be lost when app exit
+
+7. Why is `async void` dangerous?
+the caller can't use await on it , and won't know the status. with `async Task` we can do both

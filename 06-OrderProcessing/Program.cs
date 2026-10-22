@@ -25,8 +25,15 @@ public static class Program
             cts.CancelAfter(ms);
         }
 
-        string phase = "phase2";
+        // dotnet run -- phase3            (runs all the parts of phase 3)
+        // dotnet run -- phase3 checkout   (only 9.3 / 9.4)
+        // dotnet run -- phase3 compare    (only 9.6)
+        // dotnet run -- phase3 demo       (only 9.7)
+        string phase = "phase3";
         if (args.Length > 0 && !args[0].StartsWith("--")) phase = args[0];
+
+        string part = "all";
+        if (args.Length > 1 && !args[1].StartsWith("--")) part = args[1];
 
         if (phase == "phase1")
         {
@@ -35,6 +42,14 @@ public static class Program
         else if (phase == "phase2")
         {
             await new Phase2Runner().RunAsync(cts.Token);
+        }
+        else if (phase == "phase3")
+        {
+            var runner = new Phase3Runner();
+            if (part == "checkout") await runner.RunCheckoutAsync(cts.Token);
+            else if (part == "compare") await runner.RunComparisonAsync(cts.Token);
+            else if (part == "demo") await runner.RunDemoAsync(cts.Token);
+            else await runner.RunAsync(cts.Token);
         }
         else
         {

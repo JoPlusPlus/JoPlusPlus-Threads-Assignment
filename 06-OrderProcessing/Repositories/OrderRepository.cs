@@ -1,4 +1,5 @@
 using Mini_Project___Order_Processing_System.Data;
+using Mini_Project___Order_Processing_System.MyExceptions;
 
 namespace Mini_Project___Order_Processing_System;
 
@@ -6,11 +7,25 @@ public class OrderRepository
 {
     private const string Name = "OrderRepository";
     private readonly JsonFileStore _store = new();
+    private readonly HashSet<int> _failSaveForOrderIds;
+
+    // Phase 3: saving these orders (with Status Completed) throws DatabaseWriteException
+    public OrderRepository(IEnumerable<int>? failSaveForOrderIds = null)
+    {
+        _failSaveForOrderIds = new HashSet<int>(failSaveForOrderIds ?? new List<int>());
+    }
 
     public async Task SaveAsync(Order order, CancellationToken ct)
     {
         await Simulate.DbWriteAsync(Name, $"Saving Order #{order.Id}", async token =>
         {
+            // controlled failure: nothing is written
+            if (_failSaveForOrderIds.Contains(order.Id) && order.Status == OrderStatus.Completed)
+            {
+                Log.Error(Name, $"Connection lost while saving Order #{order.Id}");
+                throw new DatabaseWriteException("Connection lost during commit");
+            }
+
             await _store.UpdateAsync<Order>(DataFiles.Orders, list =>
             {
                 int index = list.FindIndex(o => o.Id == order.Id);
