@@ -93,3 +93,19 @@ public class Report
     public decimal AverageOrderValue { get; set; }
     public DateTime GeneratedAt { get; set; }
 }
+public class CustomerDashboard
+{
+    public Customer Customer { get; set; } = new();
+    public List<Order> Orders { get; set; } = new();
+    public List<PaymentTransaction> Payments { get; set; } = new();
+    public List<EmailMessage> Emails { get; set; } = new();
+}
+public class ShippingQuote
+{
+    public string Carrier { get; set; } = "";
+    public decimal Price { get; set; }
+    public long ElapsedMs { get; set; }
+
+    // carriers that were stopped because another carrier won
+    public List<string> CancelledCarriers { get; set; } = new();
+}

@@ -155,7 +155,7 @@ public class Phase3Runner
 
     // withFailures = true  -> the controlled failures of Task 9.2
     // withFailures = false -> no failures at all (Task 9.6)
-    private OrderProcessor BuildProcessor(bool withFailures)
+    public OrderProcessor BuildProcessor(bool withFailures)
     {
         IPaymentGateway payment;
         OrderRepository orders;

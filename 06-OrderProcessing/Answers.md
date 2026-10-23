@@ -94,3 +94,34 @@ if the work done is optional and it's ok to be lost when app exit
 
 7. Why is `async void` dangerous?
 the caller can't use await on it , and won't know the status. with `async Task` we can do both
+
+# Phase 4 Questions
+
+## 1. Which tool did I use for each task, and why can't "start, then await one by one" meet the requirement?
+
+starting one by one will take much time
+
+## 2. In 10.2, when several loads fail, how do I get every exception? What does a plain `await` give me?
+
+A plain `await` on `Task.WhenAll(...)` throws only the first exception even if more loads failed. to get all of them I keep the task in a variable (`Task all = Task.WhenAll(...)`) and after `await all` fails I read `all.Exception.InnerExceptions`. then In my code I throw `all.Exception` and prints each inner exception.
+
+## 3. In 10.3, what happens to the losing carriers if I never cancel them?
+
+They keep running until they finish by themselves, even if nobody needs their answer anymore.
+
+## 4. Why does 10.4 A get faster with more CPU cores, while 10.4 B does not?
+
+because 10.4A is CPU-Bound , so adding more cores will make the calculations faster
+while 10.4B is I/O operations so adding more cores is useless
+
+## 5. What is the difference between parallel work (10.4 A) and concurrent asynchronous work (10.1)?
+
+Parallel means all Threads execute in the same time in parallel
+which concurrent asynchronous , they execute one after another
+
+## 6. Cancelled run
+
+
+## 10.4 B: why is the total time about 8 seconds?
+
+Each send takes 200 + 300 + 500 = 1000 ms. With 4 sends at the same time, 30 emails need 30 ÷ 4 = 7.5 rounds, so 8 rounds of about 1 s, which is about 8 s. My run took 8.1 s.
